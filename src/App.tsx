@@ -1,16 +1,10 @@
 import "./styles.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import * as tfjs from "@tensorflow/tfjs";
 import * as tmImage from "@teachablemachine/image";
-
-// More API functions here:
-// https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/image
 
 let model: tmImage.CustomMobileNet | null = null;
 let webcam: tmImage.Webcam | null = null;
-let labelContainer: HTMLElement | null = null;
-let maxPredictions: number = 0;
 
 type InitModelAndCam = {
   webcamContainer: HTMLElement;
@@ -21,17 +15,11 @@ type Prediction = {
   probability: number;
 };
 
-// Load the image model and setup the webcam
 async function initModelAndCam({ webcamContainer }: InitModelAndCam) {
   const modelURL = "/model.json";
   const metadataURL = "/metadata.json";
 
-  // load the model and metadata
-  // Refer to tmImage.loadFromFiles() in the API to support files from a file picker
-  // or files from your local hard drive
-  // Note: the pose library adds "tmImage" object to your window (window.tmImage)
   model = await tmImage.load(modelURL, metadataURL);
-  maxPredictions = model.getTotalClasses();
 
   // Convenience function to setup a webcam
   const flip = true; // whether to flip the webcam
