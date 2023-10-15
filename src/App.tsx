@@ -3,8 +3,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import * as tmImage from "@teachablemachine/image";
 
+const SELECTED_CLASS_PROBABILITY_THRESHOLD = 0.7;
 let model: tmImage.CustomMobileNet | null = null;
 let webcam: tmImage.Webcam | null = null;
+let classLabels: string[] | null = null;
 
 type InitModelAndCam = {
   webcamContainer: HTMLElement;
@@ -20,6 +22,7 @@ async function initModelAndCam({ webcamContainer }: InitModelAndCam) {
   const metadataURL = "/metadata.json";
 
   model = await tmImage.load(modelURL, metadataURL);
+  classLabels = model.getClassLabels();
 
   // Convenience function to setup a webcam
   const flip = true; // whether to flip the webcam
@@ -32,7 +35,12 @@ async function initModelAndCam({ webcamContainer }: InitModelAndCam) {
 export default function App() {
   const webcamContainerRef = useRef<HTMLDivElement>(null);
   const [playing, setPlaying] = useState(false);
-  const [predictions, setPredictions] = useState<Prediction[]>([]);
+  //const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [currentSelectedClassName, setCurrentSelectedClassName] = useState<
+    string | null
+  >(null);
+  const [round, setRound] = useState(0);
+  const [isWon, setIsWon] = useState(false);
 
   const init = useCallback(async () => {
     if (!webcam) {
@@ -59,7 +67,36 @@ export default function App() {
 
     async function predict() {
       const predictions = await model!.predict(webcam!.canvas);
-      setPredictions(predictions);
+      //setPredictions(predictions);
+
+      const recognized = predictions.some(({ className, probability }) => {
+        if (probability >= SELECTED_CLASS_PROBABILITY_THRESHOLD) {
+          setCurrentSelectedClassName(className);
+
+          const isShowingCorrectAnswer = className === classLabels?.[round];
+          if (isShowingCorrectAnswer) {
+            correctAnswer();
+          }
+
+          return true;
+        }
+      });
+
+      function correctAnswer() {
+        setRound((previous) => {
+          if (previous < (classLabels?.length || 0)) {
+            return previous + 1;
+          } else {
+            setIsWon(true);
+          }
+
+          return previous;
+        });
+      }
+
+      if (!recognized) {
+        setCurrentSelectedClassName(null);
+      }
     }
 
     const stop = () => {
@@ -85,13 +122,9 @@ export default function App() {
         Pause
       </button>
       <div id="webcam-container" ref={webcamContainerRef}></div>
-      <div id="label-container">
-        {predictions.map(({ className, probability }) => (
-          <div key={className}>
-            {className}: {probability}
-          </div>
-        ))}
-      </div>
+      <div>Currently showing: {currentSelectedClassName}</div>
+      <div>Round: {round + 1}</div>
+      <div>Did you win? {JSON.stringify(isWon)}</div>
     </>
   );
 }
