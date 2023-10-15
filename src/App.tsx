@@ -74,7 +74,9 @@ export default function App() {
       setPredictions(predictions);
     }
 
-    const stop = () => window.cancelAnimationFrame(loopRequest);
+    const stop = () => {
+      if (loopRequest != null) window.cancelAnimationFrame(loopRequest);
+    };
 
     if (playing) {
       loop();
