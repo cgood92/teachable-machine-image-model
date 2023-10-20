@@ -1,6 +1,6 @@
 import * as tmImage from "@teachablemachine/image";
 
-const SELECTED_CLASS_PROBABILITY_THRESHOLD = 0.7;
+const SELECTED_CLASS_PROBABILITY_THRESHOLD = 0.8;
 
 type InitModelAndCam = {
   webcamContainer: HTMLElement;
@@ -13,9 +13,11 @@ type Prediction = {
 
 export class CamModel {
   isPlaying: boolean = false;
+  onIdentifyCallback: ((className: string) => any) | null = null;
   model: tmImage.CustomMobileNet;
   webcam: tmImage.Webcam;
   classLabels: string[];
+  currentIdentifiedClassName: string | undefined = undefined;
 
   constructor({
     webcam,
@@ -73,12 +75,10 @@ export class CamModel {
 
     const recognized = predictions.some(({ className, probability }) => {
       if (probability >= SELECTED_CLASS_PROBABILITY_THRESHOLD) {
-        //console.log("recognized");
-
-        //   const isShowingCorrectAnswer = className === this.classLabels?.[round];
-        //   if (isShowingCorrectAnswer) {
-        //     console.log("showing correct answer");
-        //   }
+        if (className !== this.currentIdentifiedClassName) {
+          this.onIdentifyCallback?.(className);
+          this.currentIdentifiedClassName = className;
+        }
 
         return true;
       }
@@ -87,5 +87,11 @@ export class CamModel {
     if (!recognized) {
       console.log("no longer recognized");
     }
+  };
+
+  getClassLabels = () => this.classLabels;
+
+  onIdentify = (cb: typeof this.onIdentifyCallback) => {
+    this.onIdentifyCallback = cb;
   };
 }

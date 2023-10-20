@@ -32,6 +32,7 @@ export default function App() {
           Resume
         </button>
       )}
+      {current.matches("win") && "You won!"}
       <div id="webcam-container" ref={webcamContainerRef}></div>
       <div>Round: {round + 1}</div>
     </>
